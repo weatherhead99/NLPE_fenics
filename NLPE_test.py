@@ -46,10 +46,13 @@ p = fc.Expression('exp(-pot) * exp(phi_p)',pot=potential,phi_p=0,degree=2)
 init_pot_guess = fc.Expression('asinh(D/2.)',D=doping,degree=2)
 potential.assign(init_pot_guess)
 
-poisson_bilinear =  perm * fc.dot(fc.grad(potential), fc.grad(t))*fc.dx - (n - p)*t*fc.dx
+dP = fc.TrialFunction(V)
 
-#try to solve it, oh shit
-fc.solve(poisson_bilinear == doping, potential,bc)
+#calculate 1 potential delta
+dp_bilinear = perm * fc.dot(fc.grad(dP),fc.grad(t))*fc.dx - dP * t * (n + p)*fc.dx
+dp_linear = (n - p - doping - (n+p)*potential)*t*fc.dx
 
-vtkFile = fc.File('potential.pvd')
-vtkFile << potential
+
+dPP = fc.Function(V)
+fc.solve(dp_bilinear == dp_linear, dPP,bc)
+
